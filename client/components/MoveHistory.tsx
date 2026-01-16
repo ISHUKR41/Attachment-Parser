@@ -1,17 +1,19 @@
 import React, { useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform } from 'react-native';
 import Animated, { FadeIn, Layout } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { Move } from '@/lib/chessLogic';
 import { ThemedText } from './ThemedText';
-import { BorderRadius, Spacing } from '@/constants/theme';
+import { BorderRadius, Spacing, ChessColors } from '@/constants/theme';
 
 interface MoveHistoryProps {
   moves: Move[];
 }
 
 export default function MoveHistory({ moves }: MoveHistoryProps) {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -20,10 +22,22 @@ export default function MoveHistory({ moves }: MoveHistoryProps) {
 
   if (moves.length === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.backgroundDefault }]}>
-        <ThemedText style={[styles.emptyText, { opacity: 0.5 }]}>
-          No moves yet
-        </ThemedText>
+      <View style={styles.outerContainer}>
+        <LinearGradient
+          colors={isDark
+            ? [theme.backgroundDefault, theme.backgroundSecondary]
+            : [theme.backgroundDefault, theme.backgroundSecondary]}
+          style={styles.container}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.emptyContainer}>
+            <Feather name="list" size={18} color={theme.textSecondary} />
+            <ThemedText style={[styles.emptyText, { color: theme.textSecondary }]}>
+              No moves yet - start playing!
+            </ThemedText>
+          </View>
+        </LinearGradient>
       </View>
     );
   }
@@ -38,61 +52,98 @@ export default function MoveHistory({ moves }: MoveHistoryProps) {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundDefault }]}>
-      <ThemedText type="small" style={[styles.label, { opacity: 0.6 }]}>
-        Move History
-      </ThemedText>
-      <ScrollView
-        ref={scrollViewRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+    <View style={styles.outerContainer}>
+      <LinearGradient
+        colors={isDark
+          ? [theme.backgroundDefault, theme.backgroundSecondary]
+          : [theme.backgroundDefault, theme.backgroundSecondary]}
+        style={styles.container}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
-        {movePairs.map((pair, index) => (
-          <Animated.View
-            key={pair.number}
-            entering={FadeIn.delay(index * 30)}
-            layout={Layout.springify()}
-            style={styles.movePair}
-          >
-            <ThemedText style={[styles.moveNumber, { opacity: 0.4 }]}>
-              {pair.number}.
-            </ThemedText>
-            <ThemedText
-              style={[
-                styles.move,
-                index === movePairs.length - 1 && !pair.black && styles.currentMove,
-                index === movePairs.length - 1 && !pair.black && { color: theme.link },
-              ]}
-            >
-              {pair.white}
-            </ThemedText>
-            {pair.black ? (
-              <ThemedText
+        <View style={styles.header}>
+          <Feather name="list" size={14} color={theme.textSecondary} />
+          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+            Move History
+          </ThemedText>
+        </View>
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {movePairs.map((pair, index) => {
+            const isLatest = index === movePairs.length - 1;
+            return (
+              <Animated.View
+                key={pair.number}
+                entering={FadeIn.delay(index * 30)}
+                layout={Layout.springify()}
                 style={[
-                  styles.move,
-                  index === movePairs.length - 1 && styles.currentMove,
-                  index === movePairs.length - 1 && { color: theme.link },
+                  styles.movePair,
+                  isLatest && { backgroundColor: `${ChessColors.emerald}15`, borderRadius: BorderRadius.sm },
+                  isLatest && { paddingHorizontal: Spacing.sm },
                 ]}
               >
-                {pair.black}
-              </ThemedText>
-            ) : null}
-          </Animated.View>
-        ))}
-      </ScrollView>
+                <ThemedText style={[styles.moveNumber, { color: theme.textSecondary }]}>
+                  {pair.number}.
+                </ThemedText>
+                <ThemedText
+                  style={[
+                    styles.move,
+                    isLatest && !pair.black && { color: ChessColors.emerald, fontWeight: '700' },
+                  ]}
+                >
+                  {pair.white}
+                </ThemedText>
+                {pair.black ? (
+                  <ThemedText
+                    style={[
+                      styles.move,
+                      isLatest && { color: ChessColors.emerald, fontWeight: '700' },
+                    ]}
+                  >
+                    {pair.black}
+                  </ThemedText>
+                ) : null}
+              </Animated.View>
+            );
+          })}
+        </ScrollView>
+      </LinearGradient>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+      },
+      android: { elevation: 1 },
+    }),
+  },
   container: {
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.md,
-    minHeight: 60,
+    minHeight: 50,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   label: {
-    marginBottom: Spacing.xs,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   scrollContent: {
     flexDirection: 'row',
@@ -103,20 +154,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
+    paddingVertical: Spacing.xs,
   },
   moveNumber: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   move: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
-  currentMove: {
-    fontWeight: '700',
+  emptyContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
   },
   emptyText: {
-    textAlign: 'center',
     fontSize: 13,
+    fontWeight: '500',
   },
 });

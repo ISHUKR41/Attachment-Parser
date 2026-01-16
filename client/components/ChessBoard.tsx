@@ -1,16 +1,18 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, Pressable, Dimensions } from 'react-native';
+import { View, StyleSheet, Pressable, Dimensions, Platform } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   withSpring,
   FadeIn,
   ZoomIn,
+  withTiming,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/hooks/useTheme';
 import { Position, Piece, Move } from '@/lib/chessLogic';
 import ChessPiece from './ChessPiece';
-import { BorderRadius } from '@/constants/theme';
+import { BorderRadius, ChessColors } from '@/constants/theme';
 
 interface ChessBoardProps {
   board: (Piece | null)[][];
@@ -24,11 +26,18 @@ interface ChessBoardProps {
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BOARD_PADDING = 8;
-const BOARD_SIZE = Math.min(SCREEN_WIDTH - 32, 400);
+const BOARD_PADDING = 12;
+const BOARD_SIZE = Math.min(SCREEN_WIDTH - 40, 380);
 const SQUARE_SIZE = (BOARD_SIZE - BOARD_PADDING * 2) / 8;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const LIGHT_SQUARE_COLORS = ['#F0E4D4', '#E8D8C4'];
+const DARK_SQUARE_COLORS = ['#1B7A5C', '#166B50'];
+const SELECTED_COLORS = ['#FFD700', '#DAA520'];
+const LAST_MOVE_COLORS = ['rgba(27, 122, 92, 0.4)', 'rgba(27, 122, 92, 0.3)'];
+const CHECK_COLORS = ['#FF4444', '#CC0000'];
+const VALID_MOVE_COLOR = 'rgba(46, 204, 155, 0.7)';
 
 function Square({
   row,
@@ -51,8 +60,6 @@ function Square({
   isCheck: boolean;
   onPress: () => void;
 }) {
-  const { theme } = useTheme();
-
   const handlePress = () => {
     if (piece || isValidMove) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -60,51 +67,40 @@ function Square({
     onPress();
   };
 
-  const baseColor = isLight ? theme.boardLight : theme.boardDark;
-  
-  let overlayColor = 'transparent';
-  if (isCheck) {
-    overlayColor = theme.check;
-  } else if (isSelected) {
-    overlayColor = theme.highlight;
-  } else if (isLastMove) {
-    overlayColor = theme.lastMove;
-  }
+  const getSquareColors = () => {
+    if (isCheck) return CHECK_COLORS;
+    if (isSelected) return SELECTED_COLORS;
+    if (isLastMove) return isLight ? ['#A8D5BA', '#98C8AB'] : ['#2A8A6A', '#1F7A5A'];
+    return isLight ? LIGHT_SQUARE_COLORS : DARK_SQUARE_COLORS;
+  };
+
+  const squareColors = getSquareColors();
 
   return (
     <AnimatedPressable
-      entering={FadeIn.delay((row * 8 + col) * 10).duration(200)}
+      entering={FadeIn.delay((row * 8 + col) * 8).duration(150)}
       onPress={handlePress}
-      style={[
-        styles.square,
-        {
-          backgroundColor: baseColor,
-          width: SQUARE_SIZE,
-          height: SQUARE_SIZE,
-        },
-      ]}
+      style={[styles.square, { width: SQUARE_SIZE, height: SQUARE_SIZE }]}
     >
-      {overlayColor !== 'transparent' ? (
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            { backgroundColor: overlayColor },
-          ]}
-        />
-      ) : null}
-      
+      <LinearGradient
+        colors={squareColors}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+
       {isValidMove ? (
         <Animated.View
           entering={ZoomIn.duration(150)}
           style={[
             styles.validMoveIndicator,
             {
-              backgroundColor: piece ? 'transparent' : theme.validMove,
-              borderColor: piece ? theme.validMove : 'transparent',
-              borderWidth: piece ? 3 : 0,
-              width: piece ? SQUARE_SIZE - 4 : SQUARE_SIZE * 0.35,
-              height: piece ? SQUARE_SIZE - 4 : SQUARE_SIZE * 0.35,
-              borderRadius: piece ? BorderRadius.xs : SQUARE_SIZE * 0.175,
+              backgroundColor: piece ? 'transparent' : VALID_MOVE_COLOR,
+              borderColor: piece ? VALID_MOVE_COLOR : 'transparent',
+              borderWidth: piece ? 4 : 0,
+              width: piece ? SQUARE_SIZE - 4 : SQUARE_SIZE * 0.38,
+              height: piece ? SQUARE_SIZE - 4 : SQUARE_SIZE * 0.38,
+              borderRadius: piece ? BorderRadius.xs : SQUARE_SIZE * 0.19,
             },
           ]}
         />
@@ -114,7 +110,7 @@ function Square({
         <ChessPiece
           type={piece.type}
           color={piece.color}
-          size={SQUARE_SIZE * 0.85}
+          size={SQUARE_SIZE * 0.88}
           isSelected={isSelected}
         />
       ) : null}
@@ -132,7 +128,7 @@ export default function ChessBoard({
   onSquarePress,
   flipped = false,
 }: ChessBoardProps) {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
 
   const renderBoard = useMemo(() => {
     const rows = [];
@@ -180,52 +176,77 @@ export default function ChessBoard({
   }, [board, selectedSquare, validMoves, lastMove, isCheck, kingInCheckPosition, flipped, onSquarePress]);
 
   return (
-    <View
-      style={[
-        styles.boardContainer,
-        { backgroundColor: theme.backgroundSecondary },
-      ]}
-    >
-      <View style={styles.board}>{renderBoard}</View>
-      
-      <View style={styles.fileLabels}>
-        {(flipped ? 'hgfedcba' : 'abcdefgh').split('').map((file, i) => (
-          <View key={file} style={[styles.label, { width: SQUARE_SIZE }]}>
-            <Animated.Text
-              entering={FadeIn.delay(i * 30)}
-              style={[styles.labelText, { color: theme.text, opacity: 0.5 }]}
-            >
-              {file}
-            </Animated.Text>
-          </View>
-        ))}
-      </View>
+    <View style={styles.outerContainer}>
+      <LinearGradient
+        colors={isDark ? ['#2A4A3A', '#1A3A2A', '#0A2A1A'] : ['#8B7355', '#6B5344', '#5B4334']}
+        style={styles.boardFrame}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.innerBorder}>
+          <View style={styles.board}>{renderBoard}</View>
+        </View>
 
-      <View style={styles.rankLabels}>
-        {(flipped ? '12345678' : '87654321').split('').map((rank, i) => (
-          <View key={rank} style={[styles.label, { height: SQUARE_SIZE }]}>
-            <Animated.Text
-              entering={FadeIn.delay(i * 30)}
-              style={[styles.labelText, { color: theme.text, opacity: 0.5 }]}
-            >
-              {rank}
-            </Animated.Text>
-          </View>
-        ))}
-      </View>
+        <View style={styles.fileLabels}>
+          {(flipped ? 'hgfedcba' : 'abcdefgh').split('').map((file, i) => (
+            <View key={file} style={[styles.label, { width: SQUARE_SIZE }]}>
+              <Animated.Text
+                entering={FadeIn.delay(i * 30)}
+                style={styles.labelText}
+              >
+                {file}
+              </Animated.Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.rankLabels}>
+          {(flipped ? '12345678' : '87654321').split('').map((rank, i) => (
+            <View key={rank} style={[styles.label, { height: SQUARE_SIZE }]}>
+              <Animated.Text
+                entering={FadeIn.delay(i * 30)}
+                style={styles.labelText}
+              >
+                {rank}
+              </Animated.Text>
+            </View>
+          ))}
+        </View>
+      </LinearGradient>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  boardContainer: {
-    width: BOARD_SIZE,
+  outerContainer: {
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 12,
+      },
+      web: {
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+      },
+    }),
+  },
+  boardFrame: {
     padding: BOARD_PADDING,
-    borderRadius: BorderRadius.lg,
-    alignSelf: 'center',
+    borderRadius: BorderRadius.xl,
+  },
+  innerBorder: {
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   board: {
-    borderRadius: BorderRadius.sm,
+    borderRadius: BorderRadius.xs,
     overflow: 'hidden',
   },
   row: {
@@ -237,15 +258,16 @@ const styles = StyleSheet.create({
   },
   validMoveIndicator: {
     position: 'absolute',
+    zIndex: 1,
   },
   fileLabels: {
     flexDirection: 'row',
-    marginTop: 4,
+    marginTop: 6,
     marginLeft: 0,
   },
   rankLabels: {
     position: 'absolute',
-    left: -16,
+    left: -2,
     top: BOARD_PADDING,
   },
   label: {
@@ -254,6 +276,7 @@ const styles = StyleSheet.create({
   },
   labelText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.7)',
   },
 });

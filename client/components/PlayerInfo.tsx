@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { PieceColor, Piece } from '@/lib/chessLogic';
@@ -25,64 +26,94 @@ export default function PlayerInfo({
   capturedPieces,
   points,
 }: PlayerInfoProps) {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
 
   return (
-    <Animated.View
-      entering={FadeIn}
-      style={[
-        styles.container,
-        {
-          backgroundColor: isCurrentTurn
-            ? theme.backgroundSecondary
-            : theme.backgroundDefault,
-          borderColor: isCurrentTurn ? ChessColors.gold : 'transparent',
-          borderWidth: isCurrentTurn ? 2 : 0,
-        },
-      ]}
-    >
-      <View style={styles.leftSection}>
-        <View
-          style={[
-            styles.colorIndicator,
-            {
-              backgroundColor: color === 'white' ? '#FEFEFE' : '#2A2A2A',
-              borderColor: color === 'white' ? '#2A2A2A' : '#4A4A4A',
-            },
-          ]}
-        />
-        <View style={styles.nameSection}>
-          <View style={styles.nameRow}>
-            <ThemedText style={styles.name}>{name}</ThemedText>
-            {isAI ? (
-              <Feather name="cpu" size={14} color={theme.text} style={{ opacity: 0.5 }} />
-            ) : null}
+    <Animated.View entering={FadeIn} style={styles.outerContainer}>
+      <LinearGradient
+        colors={
+          isCurrentTurn
+            ? isDark
+              ? ['rgba(212, 175, 55, 0.15)', 'rgba(212, 175, 55, 0.08)']
+              : ['rgba(212, 175, 55, 0.2)', 'rgba(212, 175, 55, 0.1)']
+            : isDark
+            ? [theme.backgroundDefault, theme.backgroundSecondary]
+            : [theme.backgroundDefault, theme.backgroundSecondary]
+        }
+        style={[
+          styles.container,
+          {
+            borderColor: isCurrentTurn ? ChessColors.gold : 'transparent',
+            borderWidth: isCurrentTurn ? 2 : 0,
+          },
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.leftSection}>
+          <LinearGradient
+            colors={color === 'white' ? ['#FFFFFF', '#E8E8E8'] : ['#3A3A3A', '#1A1A1A']}
+            style={[
+              styles.colorIndicator,
+              { borderColor: color === 'white' ? '#CCCCCC' : '#444444' },
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+          <View style={styles.nameSection}>
+            <View style={styles.nameRow}>
+              <ThemedText style={styles.name}>{name}</ThemedText>
+              {isAI ? (
+                <View style={[styles.aiBadge, { backgroundColor: `${ChessColors.emerald}20` }]}>
+                  <Feather name="cpu" size={12} color={ChessColors.emerald} />
+                </View>
+              ) : null}
+            </View>
+            <CapturedPieces capturedPieces={capturedPieces} playerColor={color} />
           </View>
-          <CapturedPieces capturedPieces={capturedPieces} playerColor={color} />
         </View>
-      </View>
 
-      <View style={styles.rightSection}>
-        <ThemedText style={[styles.points, { color: ChessColors.gold }]}>
-          {points} pts
-        </ThemedText>
-        {isCurrentTurn ? (
-          <View style={[styles.turnIndicator, { backgroundColor: ChessColors.emerald }]}>
-            <ThemedText style={styles.turnText}>Your Turn</ThemedText>
+        <View style={styles.rightSection}>
+          <View style={styles.pointsContainer}>
+            <Feather name="award" size={14} color={ChessColors.gold} />
+            <ThemedText style={[styles.points, { color: ChessColors.gold }]}>
+              {points}
+            </ThemedText>
           </View>
-        ) : null}
-      </View>
+          {isCurrentTurn ? (
+            <LinearGradient
+              colors={[ChessColors.emerald, ChessColors.emeraldDark]}
+              style={styles.turnIndicator}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <ThemedText style={styles.turnText}>Your Turn</ThemedText>
+            </LinearGradient>
+          ) : null}
+        </View>
+      </LinearGradient>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 },
+    }),
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
   },
   leftSection: {
     flexDirection: 'row',
@@ -91,9 +122,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   colorIndicator: {
-    width: 32,
-    height: 32,
-    borderRadius: BorderRadius.sm,
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.md,
     borderWidth: 2,
   },
   nameSection: {
@@ -102,19 +133,29 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
+    gap: Spacing.sm,
   },
   name: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  aiBadge: {
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.xs,
   },
   rightSection: {
     alignItems: 'flex-end',
     gap: Spacing.xs,
   },
+  pointsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
   points: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
   },
   turnIndicator: {
     paddingHorizontal: Spacing.sm,
@@ -124,6 +165,6 @@ const styles = StyleSheet.create({
   turnText: {
     color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

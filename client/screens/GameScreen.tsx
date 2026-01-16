@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, StyleSheet, Pressable, Alert, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/hooks/useTheme';
@@ -37,7 +38,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export default function GameScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<GameRouteProp>();
 
@@ -113,7 +114,7 @@ export default function GameScreen() {
           }
         }
         setIsAIThinking(false);
-      }, 500 + Math.random() * 500);
+      }, 600 + Math.random() * 600);
 
       return () => clearTimeout(timer);
     }
@@ -142,7 +143,7 @@ export default function GameScreen() {
           if (winner === playerColor) {
             result = 'win';
             points = playerColor === 'white' ? whitePoints : blackPoints;
-            points += 20; // Win bonus
+            points += 20;
           } else {
             result = 'loss';
             points = playerColor === 'white' ? whitePoints : blackPoints;
@@ -286,12 +287,19 @@ export default function GameScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <LinearGradient
+        colors={isDark
+          ? ['#0A1612', '#0D2820', '#0A1612']
+          : ['#E8F5E9', '#C8E6C9', '#E8F5E9']}
+        style={StyleSheet.absoluteFill}
+      />
+
       <View
         style={[
           styles.content,
           {
-            paddingTop: headerHeight + Spacing.md,
-            paddingBottom: insets.bottom + Spacing.lg,
+            paddingTop: headerHeight + Spacing.sm,
+            paddingBottom: insets.bottom + Spacing.md,
           },
         ]}
       >
@@ -335,11 +343,12 @@ export default function GameScreen() {
           />
 
           {isAIThinking ? (
-            <View style={styles.thinkingContainer}>
-              <ThemedText style={[styles.thinkingText, { color: theme.link }]}>
+            <Animated.View style={styles.thinkingContainer}>
+              <View style={[styles.thinkingDot, { backgroundColor: ChessColors.emerald }]} />
+              <ThemedText style={[styles.thinkingText, { color: ChessColors.emerald }]}>
                 AI is thinking...
               </ThemedText>
-            </View>
+            </Animated.View>
           ) : null}
         </Animated.View>
 
@@ -401,24 +410,32 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
-    gap: Spacing.md,
+    gap: Spacing.sm,
   },
   boardContainer: {
     alignItems: 'center',
   },
   statusBanner: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   thinkingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  thinkingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   thinkingText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   moveHistoryContainer: {
     flex: 1,
-    minHeight: 60,
+    minHeight: 50,
   },
   controls: {
     flexDirection: 'row',
@@ -432,9 +449,18 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
     gap: Spacing.sm,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 },
+    }),
   },
   controlText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
