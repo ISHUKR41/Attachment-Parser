@@ -1,246 +1,312 @@
-import express from "express";
-import type { Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import * as fs from "fs";
-import * as path from "path";
+import express from 'express';
+import { createServer } from 'http';
+import { WebSocketServer, WebSocket } from 'ws';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = express();
-const log = console.log;
+const httpServer = createServer(app);
+const wss = new WebSocketServer({ server: httpServer });
 
-declare module "http" {
-  interface IncomingMessage {
-    rawBody: unknown;
+// Store active game rooms and waiting players
+interface Player {
+  id: string;
+  ws: WebSocket;
+  username: string;
+  rating: number;
+  isSearching: boolean;
+}
+
+interface GameRoom {
+  id: string;
+  whitePlayer: Player;
+  blackPlayer: Player;
+  gameState: any;
+  createdAt: number;
+}
+
+const players = new Map<string, Player>();
+const gameRooms = new Map<string, GameRoom>();
+const matchmakingQueue: Player[] = [];
+
+// Generate unique IDs
+function generateId(): string {
+  return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+}
+
+// Find a match within rating range
+function findMatch(player: Player): Player | null {
+  const ratingRange = 100; // ±100 rating points
+  
+  for (let i = 0; i < matchmakingQueue.length; i++) {
+    const opponent = matchmakingQueue[i];
+    if (opponent.id !== player.id) {
+      const ratingDiff = Math.abs(player.rating - opponent.rating);
+      if (ratingDiff <= ratingRange) {
+        matchmakingQueue.splice(i, 1); // Remove from queue
+        return opponent;
+      }
+    }
+  }
+  return null;
+}
+
+// Create a new game room
+function createGameRoom(player1: Player, player2: Player): GameRoom {
+  const roomId = generateId();
+  
+  // Randomly assign colors
+  const isPlayer1White = Math.random() < 0.5;
+  const whitePlayer = isPlayer1White ? player1 : player2;
+  const blackPlayer = isPlayer1White ? player2 : player1;
+
+  const room: GameRoom = {
+    id: roomId,
+    whitePlayer,
+    blackPlayer,
+    gameState: null,
+    createdAt: Date.now(),
+  };
+
+  gameRooms.set(roomId, room);
+  
+  // Notify both players
+  const gameStartMessage = {
+    type: 'game_start',
+    roomId,
+    playerColor: isPlayer1White ? 'white' : 'black',
+    opponent: {
+      username: player2.username,
+      rating: player2.rating,
+    },
+  };
+
+  const gameStartMessage2 = {
+    type: 'game_start',
+    roomId,
+    playerColor: isPlayer1White ? 'black' : 'white',
+    opponent: {
+      username: player1.username,
+      rating: player1.rating,
+    },
+  };
+
+  player1.ws.send(JSON.stringify(gameStartMessage));
+  player2.ws.send(JSON.stringify(gameStartMessage2));
+
+  return room;
+}
+
+// Broadcast move to opponent
+function broadcastMove(roomId: string, senderId: string, moveData: any) {
+  const room = gameRooms.get(roomId);
+  if (!room) return;
+
+  const opponent = room.whitePlayer.id === senderId ? room.blackPlayer : room.whitePlayer;
+  
+  const message = {
+    type: 'move',
+    move: moveData,
+  };
+
+  if (opponent.ws.readyState === WebSocket.OPEN) {
+    opponent.ws.send(JSON.stringify(message));
   }
 }
 
-function setupCors(app: express.Application) {
-  app.use((req, res, next) => {
-    const origins = new Set<string>();
+// Handle WebSocket connections
+wss.on('connection', (ws: WebSocket) => {
+  const playerId = generateId();
+  console.log(`Player connected: ${playerId}`);
 
-    if (process.env.REPLIT_DEV_DOMAIN) {
-      origins.add(`https://${process.env.REPLIT_DEV_DOMAIN}`);
+  let currentPlayer: Player | null = null;
+
+  ws.on('message', (data: string) => {
+    try {
+      const message = JSON.parse(data.toString());
+
+      switch (message.type) {
+        case 'register':
+          // Register new player
+          currentPlayer = {
+            id: playerId,
+            ws,
+            username: message.username || `Player${playerId.substring(0, 6)}`,
+            rating: message.rating || 1200,
+            isSearching: false,
+          };
+          players.set(playerId, currentPlayer);
+          
+          ws.send(JSON.stringify({
+            type: 'registered',
+            playerId,
+            username: currentPlayer.username,
+            rating: currentPlayer.rating,
+          }));
+          break;
+
+        case 'find_match':
+          // Join matchmaking queue
+          if (!currentPlayer) {
+            ws.send(JSON.stringify({ type: 'error', message: 'Not registered' }));
+            return;
+          }
+
+          currentPlayer.isSearching = true;
+          
+          // Try to find immediate match
+          const opponent = findMatch(currentPlayer);
+          
+          if (opponent) {
+            // Match found!
+            createGameRoom(currentPlayer, opponent);
+          } else {
+            // Add to queue
+            matchmakingQueue.push(currentPlayer);
+            ws.send(JSON.stringify({ type: 'searching' }));
+          }
+          break;
+
+        case 'cancel_search':
+          if (currentPlayer) {
+            currentPlayer.isSearching = false;
+            const queueIndex = matchmakingQueue.findIndex(p => p.id === playerId);
+            if (queueIndex !== -1) {
+              matchmakingQueue.splice(queueIndex, 1);
+            }
+            ws.send(JSON.stringify({ type: 'search_cancelled' }));
+          }
+          break;
+
+        case 'move':
+          // Broadcast move to opponent
+          if (message.roomId) {
+            broadcastMove(message.roomId, playerId, message.moveData);
+            
+            // Update game state
+            const room = gameRooms.get(message.roomId);
+            if (room) {
+              room.gameState = message.gameState;
+            }
+          }
+          break;
+
+        case 'game_over':
+          // Handle game end
+          if (message.roomId) {
+            const room = gameRooms.get(message.roomId);
+            if (room) {
+              const opponent = room.whitePlayer.id === playerId ? room.blackPlayer : room.whitePlayer;
+              
+              if (opponent.ws.readyState === WebSocket.OPEN) {
+                opponent.ws.send(JSON.stringify({
+                  type: 'game_over',
+                  result: message.result,
+                  winner: message.winner,
+                }));
+              }
+              
+              // Clean up room
+              gameRooms.delete(message.roomId);
+            }
+          }
+          break;
+
+        case 'chat':
+          // Send chat message to opponent
+          if (message.roomId) {
+            const room = gameRooms.get(message.roomId);
+            if (room) {
+              const opponent = room.whitePlayer.id === playerId ? room.blackPlayer : room.whitePlayer;
+              
+              if (opponent.ws.readyState === WebSocket.OPEN) {
+                opponent.ws.send(JSON.stringify({
+                  type: 'chat',
+                  message: message.text,
+                  sender: currentPlayer?.username,
+                }));
+              }
+            }
+          }
+          break;
+
+        default:
+          console.log('Unknown message type:', message.type);
+      }
+    } catch (error) {
+      console.error('Error handling message:', error);
+      ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
     }
-
-    if (process.env.REPLIT_DOMAINS) {
-      process.env.REPLIT_DOMAINS.split(",").forEach((d) => {
-        origins.add(`https://${d.trim()}`);
-      });
-    }
-
-    const origin = req.header("origin");
-
-    // Allow localhost origins for Expo web development (any port)
-    const isLocalhost =
-      origin?.startsWith("http://localhost:") ||
-      origin?.startsWith("http://127.0.0.1:");
-
-    if (origin && (origins.has(origin) || isLocalhost)) {
-      res.header("Access-Control-Allow-Origin", origin);
-      res.header(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS",
-      );
-      res.header("Access-Control-Allow-Headers", "Content-Type");
-      res.header("Access-Control-Allow-Credentials", "true");
-    }
-
-    if (req.method === "OPTIONS") {
-      return res.sendStatus(200);
-    }
-
-    next();
   });
-}
 
-function setupBodyParsing(app: express.Application) {
-  app.use(
-    express.json({
-      verify: (req, _res, buf) => {
-        req.rawBody = buf;
-      },
-    }),
-  );
+  ws.on('close', () => {
+    console.log(`Player disconnected: ${playerId}`);
+    
+    // Remove from matchmaking queue
+    const queueIndex = matchmakingQueue.findIndex(p => p.id === playerId);
+    if (queueIndex !== -1) {
+      matchmakingQueue.splice(queueIndex, 1);
+    }
 
-  app.use(express.urlencoded({ extended: false }));
-}
-
-function setupRequestLogging(app: express.Application) {
-  app.use((req, res, next) => {
-    const start = Date.now();
-    const path = req.path;
-    let capturedJsonResponse: Record<string, unknown> | undefined = undefined;
-
-    const originalResJson = res.json;
-    res.json = function (bodyJson, ...args) {
-      capturedJsonResponse = bodyJson;
-      return originalResJson.apply(res, [bodyJson, ...args]);
-    };
-
-    res.on("finish", () => {
-      if (!path.startsWith("/api")) return;
-
-      const duration = Date.now() - start;
-
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+    // Notify opponent if in game
+    gameRooms.forEach((room, roomId) => {
+      if (room.whitePlayer.id === playerId || room.blackPlayer.id === playerId) {
+        const opponent = room.whitePlayer.id === playerId ? room.blackPlayer : room.whitePlayer;
+        
+        if (opponent.ws.readyState === WebSocket.OPEN) {
+          opponent.ws.send(JSON.stringify({
+            type: 'opponent_disconnected',
+          }));
+        }
+        
+        gameRooms.delete(roomId);
       }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
     });
 
-    next();
-  });
-}
-
-function getAppName(): string {
-  try {
-    const appJsonPath = path.resolve(process.cwd(), "app.json");
-    const appJsonContent = fs.readFileSync(appJsonPath, "utf-8");
-    const appJson = JSON.parse(appJsonContent);
-    return appJson.expo?.name || "App Landing Page";
-  } catch {
-    return "App Landing Page";
-  }
-}
-
-function serveExpoManifest(platform: string, res: Response) {
-  const manifestPath = path.resolve(
-    process.cwd(),
-    "static-build",
-    platform,
-    "manifest.json",
-  );
-
-  if (!fs.existsSync(manifestPath)) {
-    return res
-      .status(404)
-      .json({ error: `Manifest not found for platform: ${platform}` });
-  }
-
-  res.setHeader("expo-protocol-version", "1");
-  res.setHeader("expo-sfv-version", "0");
-  res.setHeader("content-type", "application/json");
-
-  const manifest = fs.readFileSync(manifestPath, "utf-8");
-  res.send(manifest);
-}
-
-function serveLandingPage({
-  req,
-  res,
-  landingPageTemplate,
-  appName,
-}: {
-  req: Request;
-  res: Response;
-  landingPageTemplate: string;
-  appName: string;
-}) {
-  const forwardedProto = req.header("x-forwarded-proto");
-  const protocol = forwardedProto || req.protocol || "https";
-  const forwardedHost = req.header("x-forwarded-host");
-  const host = forwardedHost || req.get("host");
-  const baseUrl = `${protocol}://${host}`;
-  const expsUrl = `${host}`;
-
-  log(`baseUrl`, baseUrl);
-  log(`expsUrl`, expsUrl);
-
-  const html = landingPageTemplate
-    .replace(/BASE_URL_PLACEHOLDER/g, baseUrl)
-    .replace(/EXPS_URL_PLACEHOLDER/g, expsUrl)
-    .replace(/APP_NAME_PLACEHOLDER/g, appName);
-
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.status(200).send(html);
-}
-
-function configureExpoAndLanding(app: express.Application) {
-  const templatePath = path.resolve(
-    process.cwd(),
-    "server",
-    "templates",
-    "landing-page.html",
-  );
-  const landingPageTemplate = fs.readFileSync(templatePath, "utf-8");
-  const appName = getAppName();
-
-  log("Serving static Expo files with dynamic manifest routing");
-
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.path.startsWith("/api")) {
-      return next();
-    }
-
-    if (req.path !== "/" && req.path !== "/manifest") {
-      return next();
-    }
-
-    const platform = req.header("expo-platform");
-    if (platform && (platform === "ios" || platform === "android")) {
-      return serveExpoManifest(platform, res);
-    }
-
-    if (req.path === "/") {
-      return serveLandingPage({
-        req,
-        res,
-        landingPageTemplate,
-        appName,
-      });
-    }
-
-    next();
+    players.delete(playerId);
   });
 
-  app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
-  app.use(express.static(path.resolve(process.cwd(), "static-build")));
-
-  log("Expo routing: Checking expo-platform header on / and /manifest");
-}
-
-function setupErrorHandler(app: express.Application) {
-  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    const error = err as {
-      status?: number;
-      statusCode?: number;
-      message?: string;
-    };
-
-    const status = error.status || error.statusCode || 500;
-    const message = error.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-
-    throw err;
+  ws.on('error', (error: Error) => {
+    console.error('WebSocket error:', error);
   });
+});
+
+// Proxy requests to Expo dev server (for development)
+if (process.env.NODE_ENV === 'development') {
+  const EXPO_PORT = 8081;
+  app.use('/', createProxyMiddleware({
+    target: `http://localhost:${EXPO_PORT}`,
+    changeOrigin: true,
+    ws: false, // Don't proxy WebSocket, we handle it separately
+  }));
 }
 
-(async () => {
-  setupCors(app);
-  setupBodyParsing(app);
-  setupRequestLogging(app);
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    players: players.size,
+    activeGames: gameRooms.size,
+    queueLength: matchmakingQueue.length,
+  });
+});
 
-  configureExpoAndLanding(app);
+const PORT = process.env.PORT || 5000;
 
-  const server = await registerRoutes(app);
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Chess server running on port ${PORT}`);
+  console.log(`WebSocket server ready for connections`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'production'}`);
+});
 
-  setupErrorHandler(app);
-
-  const port = parseInt(process.env.PORT || "5000", 10);
-  server.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`express server serving on port ${port}`);
-    },
-  );
-})();
+// Cleanup old game rooms (after 2 hours of inactivity)
+setInterval(() => {
+  const now = Date.now();
+  const TWO_HOURS = 2 * 60 * 60 * 1000;
+  
+  gameRooms.forEach((room, roomId) => {
+    if (now - room.createdAt > TWO_HOURS) {
+      console.log(`Cleaning up old game room: ${roomId}`);
+      gameRooms.delete(roomId);
+    }
+  });
+}, 30 * 60 * 1000); // Check every 30 minutes

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, Pressable, Alert, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, Alert, Platform, Dimensions, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -15,6 +15,7 @@ import PromotionModal from '@/components/PromotionModal';
 import GameStatusBanner from '@/components/GameStatusBanner';
 import MoveHistory from '@/components/MoveHistory';
 import PlayerInfo from '@/components/PlayerInfo';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BorderRadius, Spacing, ChessColors } from '@/constants/theme';
 import {
@@ -34,6 +35,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Game'>;
 type GameRouteProp = RouteProp<RootStackParamList, 'Game'>;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallScreen = SCREEN_HEIGHT < 700; // Phones smaller than iPhone 11
 
 export default function GameScreen() {
   const insets = useSafeAreaInsets();
@@ -294,14 +298,17 @@ export default function GameScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      <View
-        style={[
+      <KeyboardAwareScrollViewCompat
+        style={styles.scrollView}
+        contentContainerStyle={[
           styles.content,
           {
-            paddingTop: headerHeight + Spacing.sm,
+            paddingTop: headerHeight + (isSmallScreen ? Spacing.xs : Spacing.sm),
             paddingBottom: insets.bottom + Spacing.md,
           },
         ]}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
       >
         <Animated.View entering={FadeIn.delay(100)}>
           <PlayerInfo
@@ -392,7 +399,7 @@ export default function GameScreen() {
             <ThemedText style={styles.controlText}>Exit</ThemedText>
           </AnimatedPressable>
         </Animated.View>
-      </View>
+      </KeyboardAwareScrollViewCompat>
 
       <PromotionModal
         visible={promotionPending !== null}
@@ -407,10 +414,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
     paddingHorizontal: Spacing.lg,
-    gap: Spacing.sm,
+    gap: isSmallScreen ? Spacing.xs : Spacing.sm,
   },
   boardContainer: {
     alignItems: 'center',

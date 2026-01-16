@@ -3,6 +3,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '@/screens/HomeScreen';
 import DifficultySelectScreen from '@/screens/DifficultySelectScreen';
 import GameScreen from '@/screens/GameScreen';
+import MatchmakingScreen from '@/screens/MatchmakingScreen';
+import OnlineGameScreen from '@/screens/OnlineGameScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { HeaderTitle } from '@/components/HeaderTitle';
@@ -17,6 +19,15 @@ export type RootStackParamList = {
     difficulty?: Difficulty;
     playerColor?: PieceColor;
     resumeGame?: boolean;
+  };
+  Matchmaking: undefined;
+  OnlineGame: {
+    roomId: string;
+    playerColor: PieceColor;
+    opponent: {
+      username: string;
+      rating: number;
+    };
   };
   Settings: undefined;
 };
@@ -47,6 +58,23 @@ export default function RootStackNavigator() {
         component={GameScreen}
         options={{
           headerTitle: () => <HeaderTitle title="Chess Master" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="Matchmaking"
+        component={MatchmakingScreen}
+        options={{
+          headerTitle: 'Find Match',
+          ...opaqueScreenOptions,
+        }}
+      />
+      <Stack.Screen
+        name="OnlineGame"
+        component={OnlineGameScreen}
+        options={{
+          headerTitle: () => <HeaderTitle title="Online Match" />,
           headerBackVisible: false,
           gestureEnabled: false,
         }}

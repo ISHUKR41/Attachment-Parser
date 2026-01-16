@@ -126,7 +126,7 @@ export default function DifficultySelectScreen() {
                   ]}
                 >
                   <LinearGradient
-                    colors={diff.gradientColors}
+                    colors={diff.gradientColors as string[]}
                     style={styles.difficultyIcon}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}

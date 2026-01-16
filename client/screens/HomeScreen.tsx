@@ -74,20 +74,20 @@ function MenuButton({ icon, title, subtitle, onPress, delay, color, gradientColo
       style={[styles.menuButton, animatedStyle]}
     >
       <LinearGradient
-        colors={gradientColors || defaultGradient}
+        colors={(gradientColors || defaultGradient) as string[]}
         style={StyleSheet.absoluteFill}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       />
       <View style={[styles.iconContainer, { backgroundColor: color || ChessColors.emerald }]}>
-        <Feather name={icon} size={26} color="#FFFFFF" />
+        <Feather name={icon} size={32} color="#FFFFFF" />
       </View>
       <View style={styles.buttonTextContainer}>
         <ThemedText style={styles.buttonTitle}>{title}</ThemedText>
         <ThemedText style={[styles.buttonSubtitle, { color: theme.textSecondary }]}>{subtitle}</ThemedText>
       </View>
       <View style={[styles.arrowContainer, { backgroundColor: `${color || ChessColors.emerald}20` }]}>
-        <Feather name="chevron-right" size={20} color={color || ChessColors.emerald} />
+        <Feather name="chevron-right" size={24} color={color || ChessColors.emerald} />
       </View>
     </AnimatedPressable>
   );
@@ -249,11 +249,20 @@ export default function HomeScreen() {
           />
 
           <MenuButton
+            icon="globe"
+            title="Online Multiplayer"
+            subtitle="Play against players worldwide"
+            onPress={() => navigation.navigate('Matchmaking')}
+            delay={750}
+            color={ChessColors.gold}
+          />
+
+          <MenuButton
             icon="settings"
             title="Settings"
             subtitle="Sound, haptics, and statistics"
             onPress={() => navigation.navigate('Settings')}
-            delay={800}
+            delay={850}
             color={theme.textSecondary}
           />
         </View>

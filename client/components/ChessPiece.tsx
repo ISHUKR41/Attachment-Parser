@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import Svg, { Path, G, Circle, Defs, RadialGradient, Stop, LinearGradient } from 'react-native-svg';
+import Svg, { Path, G, Circle, Defs, RadialGradient, Stop, LinearGradient, Ellipse } from 'react-native-svg';
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -18,35 +18,48 @@ interface ChessPieceProps {
 }
 
 const springConfig: WithSpringConfig = {
-  damping: 12,
-  mass: 0.5,
-  stiffness: 200,
+  damping: 14,
+  mass: 0.6,
+  stiffness: 180,
 };
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
-const getPieceColors = (color: PieceColor) => {
+// Enhanced 3D color scheme with maximum visibility and premium materials
+const getPieceColors = (color: PieceColor) =>{
   if (color === 'white') {
     return {
-      fill: '#FEFEFE',
+      // Pure white with maximum contrast for visibility
+      fill: '#FFFFFF',
       fillLight: '#FFFFFF',
+      fillMid: '#F8F8F8',
       fillDark: '#E8E8E8',
-      stroke: '#333333',
-      strokeWidth: 1.5,
-      shadow: '#CCCCCC',
+      fillShadow: '#D0D0D0',
+      stroke: '#1A1A1A', // Much darker stroke for visibility
+      strokeWidth: 2.6, // Increased from 1.8 for better visibility
+      shadow: 'rgba(0,0,0,0.5)', // Stronger shadow
       highlight: '#FFFFFF',
-      innerStroke: '#DDDDDD',
+      innerStroke: '#C0C0C0',
+      specular: '#FFFFFF',
+      ambient: '#FAFAFA',
+      outerGlow: 'rgba(255,255,255,0.8)', // Added glow effect
     };
   }
+  // Deep black with maximum contrast
   return {
-    fill: '#2D2D2D',
-    fillLight: '#3D3D3D',
-    fillDark: '#1A1A1A',
+    fill: '#0A0A0A', // Deeper black
+    fillLight: '#2A2A2A',
+    fillMid: '#1A1A1A',
+    fillDark: '#0D0D0D',
+    fillShadow: '#000000',
     stroke: '#000000',
-    strokeWidth: 1.5,
-    shadow: '#000000',
-    highlight: '#4A4A4A',
-    innerStroke: '#222222',
+    strokeWidth: 2.6, // Increased from 1.8 for better visibility
+    shadow: 'rgba(0,0,0,0.75)', // Stronger shadow
+    highlight: '#454545', // Brighter highlight for visibility
+    innerStroke: '#0A0A0A',
+    specular: '#5A5A5A', // More visible specular
+    ambient: '#151515',
+    outerGlow: 'rgba(0,0,0,0.6)', // Added glow effect
   };
 };
 
@@ -56,25 +69,48 @@ function KingPiece({ color, size }: { color: PieceColor; size: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 45 45">
       <Defs>
-        <LinearGradient id={`kingGrad${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <Stop offset="0%" stopColor={colors.fillLight} />
-          <Stop offset="50%" stopColor={colors.fill} />
-          <Stop offset="100%" stopColor={colors.fillDark} />
+        {/* Advanced 3D gradient with multiple stops for realistic shading */}
+        <LinearGradient id={`kingGrad${color}`} x1="15%" y1="0%" x2="85%" y2="100%">
+          <Stop offset="0%" stopColor={colors.fillLight} stopOpacity="1" />
+          <Stop offset="25%" stopColor={colors.fill} stopOpacity="1" />
+          <Stop offset="60%" stopColor={colors.fillMid} stopOpacity="1" />
+          <Stop offset="85%" stopColor={colors.fillDark} stopOpacity="1" />
+          <Stop offset="100%" stopColor={colors.fillShadow} stopOpacity="1" />
         </LinearGradient>
+        {/* Radial gradient for specular highlights */}
+        <RadialGradient id={`kingSpecular${color}`} cx="30%" cy="20%">
+          <Stop offset="0%" stopColor={colors.specular} stopOpacity="0.4" />
+          <Stop offset="50%" stopColor={colors.fillLight} stopOpacity="0.2" />
+          <Stop offset="100%" stopColor={colors.fill} stopOpacity="0" />
+        </RadialGradient>
       </Defs>
       <G transform="translate(0,0.5)">
+        {/* Drop shadow for 3D depth */}
+        <Ellipse
+          cx="22.5"
+          cy="42"
+          rx="10"
+          ry="2"
+          fill={colors.shadow}
+          opacity="0.3"
+        />
+        
+        {/* Cross on top */}
         <Path
           d="M 22.5,11.63 L 22.5,6"
           stroke={colors.stroke}
-          strokeWidth={2}
+          strokeWidth={2.2}
           strokeLinecap="round"
+          filter="url(#shadow)"
         />
         <Path
           d="M 20,8 L 25,8"
           stroke={colors.stroke}
-          strokeWidth={2}
+          strokeWidth={2.2}
           strokeLinecap="round"
         />
+        
+        {/* Crown top with enhanced 3D */}
         <Path
           d="M 22.5,25 C 22.5,25 27,17.5 25.5,14.5 C 25.5,14.5 24.5,12 22.5,12 C 20.5,12 19.5,14.5 19.5,14.5 C 18,17.5 22.5,25 22.5,25"
           fill={`url(#kingGrad${color})`}
@@ -83,6 +119,14 @@ function KingPiece({ color, size }: { color: PieceColor; size: number }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+        {/* Specular highlight */}
+        <Path
+          d="M 22.5,25 C 22.5,25 26,18.5 24.8,15.2 C 24.8,15.2 24,13.5 22.5,13.5 C 21,13.5 20.2,15.2 20.2,15.2 C 19,18.5 22.5,25 22.5,25"
+          fill={`url(#kingSpecular${color})`}
+          opacity="0.5"
+        />
+        
+        {/* Main body with enhanced gradients */}
         <Path
           d="M 12.5,37 C 18,40.5 27,40.5 32.5,37 L 32.5,30 C 32.5,30 41.5,25.5 38.5,19.5 C 34.5,13 25,16 22.5,23.5 L 22.5,27 L 22.5,23.5 C 20,16 10.5,13 6.5,19.5 C 3.5,25.5 12.5,30 12.5,30 L 12.5,37"
           fill={`url(#kingGrad${color})`}
@@ -90,9 +134,20 @@ function KingPiece({ color, size }: { color: PieceColor; size: number }) {
           strokeWidth={colors.strokeWidth}
           strokeLinecap="round"
         />
-        <Path d="M 12.5,30 C 18,27 27,27 32.5,30" fill="none" stroke={colors.stroke} strokeWidth={1.5} />
-        <Path d="M 12.5,33.5 C 18,30.5 27,30.5 32.5,33.5" fill="none" stroke={colors.stroke} strokeWidth={1} />
-        <Path d="M 12.5,37 C 18,34 27,34 32.5,37" fill="none" stroke={colors.stroke} strokeWidth={1} />
+        
+        {/* Inner highlights for 3D effect */}
+        <Path
+          d="M 14,36 C 19,39 26,39 31,36 L 31,31 C 31,31 38,27 36,22 C 33,17 26,19 24,25 L 24,27 L 24,25 C 22,19 15,17 12,22 C 10,27 17,31 17,31 L 14,36"
+          fill="none"
+          stroke={colors.highlight}
+          strokeWidth={0.8}
+          opacity="0.3"
+        />
+        
+        {/* Detail lines with enhanced depth */}
+        <Path d="M 12.5,30 C 18,27 27,27 32.5,30" fill="none" stroke={colors.stroke} strokeWidth={1.6} opacity="0.8" />
+        <Path d="M 12.5,33.5 C 18,30.5 27,30.5 32.5,33.5" fill="none" stroke={colors.innerStroke} strokeWidth={1.2} />
+        <Path d="M 12.5,37 C 18,34 27,34 32.5,37" fill="none" stroke={colors.stroke} strokeWidth={1.2} />
       </G>
     </Svg>
   );
@@ -104,18 +159,38 @@ function QueenPiece({ color, size }: { color: PieceColor; size: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 45 45">
       <Defs>
-        <LinearGradient id={`queenGrad${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
+        <LinearGradient id={`queenGrad${color}`} x1="15%" y1="0%" x2="85%" y2="100%">
           <Stop offset="0%" stopColor={colors.fillLight} />
-          <Stop offset="50%" stopColor={colors.fill} />
-          <Stop offset="100%" stopColor={colors.fillDark} />
+          <Stop offset="30%" stopColor={colors.fill} />
+          <Stop offset="70%" stopColor={colors.fillMid} />
+          <Stop offset="100%" stopColor={colors.fillShadow} />
         </LinearGradient>
+        <RadialGradient id={`queenSpecular${color}`} cx="35%" cy="25%">
+          <Stop offset="0%" stopColor={colors.specular} stopOpacity="0.5" />
+          <Stop offset="60%" stopColor={colors.fill} stopOpacity="0" />
+        </RadialGradient>
       </Defs>
       <G transform="translate(0,0.5)">
-        <Circle cx="6" cy="12" r="2.75" fill={`url(#queenGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} />
-        <Circle cx="14" cy="9" r="2.75" fill={`url(#queenGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} />
-        <Circle cx="22.5" cy="8" r="2.75" fill={`url(#queenGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} />
-        <Circle cx="31" cy="9" r="2.75" fill={`url(#queenGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} />
-        <Circle cx="39" cy="12" r="2.75" fill={`url(#queenGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} />
+        {/* Shadow */}
+        <Ellipse cx="22.5" cy="41" rx="11" ry="2.5" fill={colors.shadow} opacity="0.3" />
+        
+        {/* Crown spheres with 3D effect */}
+        <Circle cx="6" cy="12" r="2.9" fill={`url(#queenGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} />
+        <Circle cx="6" cy="12" r="1.8" fill={colors.specular} opacity="0.3" />
+        
+        <Circle cx="14" cy="9" r="2.9" fill={`url(#queenGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} />
+        <Circle cx="14" cy="9" r="1.8" fill={colors.specular} opacity="0.3" />
+        
+        <Circle cx="22.5" cy="8" r="2.9" fill={`url(#queenGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} />
+        <Circle cx="22.5" cy="8" r="1.8" fill={colors.specular} opacity="0.3" />
+        
+        <Circle cx="31" cy="9" r="2.9" fill={`url(#queenGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} />
+        <Circle cx="31" cy="9" r="1.8" fill={colors.specular} opacity="0.3" />
+        
+        <Circle cx="39" cy="12" r="2.9" fill={`url(#queenGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} />
+        <Circle cx="39" cy="12" r="1.8" fill={colors.specular} opacity="0.3" />
+        
+        {/* Crown body */}
         <Path
           d="M 9,26 C 17.5,24.5 30,24.5 36,26 L 38.5,13.5 L 31,25 L 30.7,10.9 L 25.5,24.5 L 22.5,10 L 19.5,24.5 L 14.3,10.9 L 14,25 L 6.5,13.5 L 9,26 z"
           fill={`url(#queenGrad${color})`}
@@ -124,6 +199,8 @@ function QueenPiece({ color, size }: { color: PieceColor; size: number }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+        
+        {/* Main body with 3D shading */}
         <Path
           d="M 9,26 C 9,28 10.5,28 11.5,30 C 12.5,31.5 12.5,31 12,33.5 C 10.5,34.5 11,36 11,36 C 9.5,37.5 11,38.5 11,38.5 C 17.5,39.5 27.5,39.5 34,38.5 C 34,38.5 35.5,37.5 34,36 C 34,36 34.5,34.5 33,33.5 C 32.5,31 32.5,31.5 33.5,30 C 34.5,28 36,28 36,26 C 27.5,24.5 17.5,24.5 9,26 z"
           fill={`url(#queenGrad${color})`}
@@ -131,10 +208,19 @@ function QueenPiece({ color, size }: { color: PieceColor; size: number }) {
           strokeWidth={colors.strokeWidth}
           strokeLinecap="round"
         />
-        <Path d="M 11,38.5 A 35,35 1 0 0 34,38.5" fill="none" stroke={colors.stroke} strokeWidth={1} strokeLinecap="round" />
-        <Path d="M 11,29 A 35,35 1 0 1 34,29" fill="none" stroke={colors.stroke} strokeWidth={1} />
+        
+        {/* Specular overlay */}
+        <Path
+          d="M 11,27 C 11,28.5 12,29 13,30.5 C 14,31.8 14,31.5 13.5,33 C 12.5,33.8 12.8,35 12.8,35 C 12,36 13,36.8 13,36.8 C 18,37.5 25,37.5 30,36.8 C 30,36.8 31,36 30.2,35 C 30.2,35 30.5,33.8 29.5,33 C 29,31.5 29,31.8 30,30.5 C 31,29 32,28.5 32,27 C 25,25.8 18,25.8 11,27 z"
+          fill={`url(#queenSpecular${color})`}
+          opacity="0.4"
+        />
+        
+        {/* Detail lines */}
+        <Path d="M 11,38.5 A 35,35 1 0 0 34,38.5" fill="none" stroke={colors.stroke} strokeWidth={1.2} strokeLinecap="round" />
+        <Path d="M 11,29 A 35,35 1 0 1 34,29" fill="none" stroke={colors.innerStroke} strokeWidth={1} opacity="0.6" />
         <Path d="M 12.5,31.5 L 32.5,31.5" fill="none" stroke={colors.stroke} strokeWidth={1} strokeLinecap="round" />
-        <Path d="M 11.5,34.5 A 35,35 1 0 0 33.5,34.5" fill="none" stroke={colors.stroke} strokeWidth={1} />
+        <Path d="M 11.5,34.5 A 35,35 1 0 0 33.5,34.5" fill="none" stroke={colors.innerStroke} strokeWidth={1} />
       </G>
     </Svg>
   );
@@ -146,23 +232,82 @@ function RookPiece({ color, size }: { color: PieceColor; size: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 45 45">
       <Defs>
-        <LinearGradient id={`rookGrad${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
+        <LinearGradient id={`rookGrad${color}`} x1="20%" y1="0%" x2="80%" y2="100%">
           <Stop offset="0%" stopColor={colors.fillLight} />
-          <Stop offset="50%" stopColor={colors.fill} />
-          <Stop offset="100%" stopColor={colors.fillDark} />
+          <Stop offset="35%" stopColor={colors.fill} />
+          <Stop offset="75%" stopColor={colors.fillDark} />
+          <Stop offset="100%" stopColor={colors.fillShadow} />
         </LinearGradient>
       </Defs>
       <G transform="translate(0,0.5)">
-        <Path d="M 9,39 L 36,39 L 36,36 L 9,36 L 9,39 z" fill={`url(#rookGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} strokeLinecap="round" />
-        <Path d="M 12.5,32 L 14,29.5 L 31,29.5 L 32.5,32 L 12.5,32 z" fill={`url(#rookGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} strokeLinecap="round" />
-        <Path d="M 12,36 L 12,32 L 33,32 L 33,36 L 12,36 z" fill={`url(#rookGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} strokeLinecap="round" />
-        <Path d="M 14,29.5 L 14,16.5 L 31,16.5 L 31,29.5 L 14,29.5 z" fill={`url(#rookGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-        <Path d="M 14,16.5 L 11,14 L 34,14 L 31,16.5 L 14,16.5 z" fill={`url(#rookGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} strokeLinecap="round" />
-        <Path d="M 11,14 L 11,9 L 15,9 L 15,11 L 20,11 L 20,9 L 25,9 L 25,11 L 30,11 L 30,9 L 34,9 L 34,14 L 11,14 z" fill={`url(#rookGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} strokeLinecap="round" />
+        {/* Shadow */}
+        <Ellipse cx="22.5" cy="41" rx="10" ry="2" fill={colors.shadow} opacity="0.3" />
+        
+        {/* Base with 3D effect */}
+        <Path 
+          d="M 9,39 L 36,39 L 36,36 L 9,36 L 9,39 z" 
+          fill={`url(#rookGrad${color})`} 
+          stroke={colors.stroke} 
+          strokeWidth={colors.strokeWidth} 
+          strokeLinecap="round" 
+        />
+        <Path 
+          d="M 12.5,32 L 14,29.5 L 31,29.5 L 32.5,32 L 12.5,32 z" 
+          fill={`url(#rookGrad${color})`} 
+          stroke={colors.stroke} 
+          strokeWidth={colors.strokeWidth} 
+          strokeLinecap="round" 
+        />
+        
+        {/* Middle section */}
+        <Path 
+          d="M 12,36 L 12,32 L 33,32 L 33,36 L 12,36 z" 
+          fill={`url(#rookGrad${color})`} 
+          stroke={colors.stroke} 
+          strokeWidth={colors.strokeWidth} 
+          strokeLinecap="round" 
+        />
+        
+        {/* Tower body with enhanced depth */}
+        <Path 
+          d="M 14,29.5 L 14,16.5 L 31,16.5 L 31,29.5 L 14,29.5 z" 
+          fill={`url(#rookGrad${color})`} 
+          stroke={colors.stroke} 
+          strokeWidth={colors.strokeWidth} 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+        />
+        
+        {/* Highlight on tower */}
+        <Path
+          d="M 16,28 L 16,18 L 18,18 L 18,28 z"
+          fill={colors.highlight}
+          opacity="0.2"
+        />
+        
+        {/* Top section */}
+        <Path 
+          d="M 14,16.5 L 11,14 L 34,14 L 31,16.5 L 14,16.5 z" 
+          fill={`url(#rookGrad${color})`} 
+          stroke={colors.stroke} 
+          strokeWidth={colors.strokeWidth} 
+          strokeLinecap="round" 
+        />
+        
+        {/* Battlements with 3D depth */}
+        <Path 
+          d="M 11,14 L 11,9 L 15,9 L 15,11 L 20,11 L 20,9 L 25,9 L 25,11 L 30,11 L 30,9 L 34,9 L 34,14 L 11,14 z" 
+          fill={`url(#rookGrad${color})`} 
+          stroke={colors.stroke} 
+          strokeWidth={colors.strokeWidth} 
+          strokeLinecap="round" 
+        />
+        
+        {/* Detail lines for depth */}
         <Path d="M 12,35.5 L 33,35.5" fill="none" stroke={colors.stroke} strokeWidth={1} strokeLinejoin="miter" />
-        <Path d="M 13,31.5 L 32,31.5" fill="none" stroke={colors.stroke} strokeWidth={1} strokeLinejoin="miter" />
+        <Path d="M 13,31.5 L 32,31.5" fill="none" stroke={colors.innerStroke} strokeWidth={0.8} strokeLinejoin="miter" />
         <Path d="M 14,29.5 L 31,29.5" fill="none" stroke={colors.stroke} strokeWidth={1} strokeLinejoin="miter" />
-        <Path d="M 14,16.5 L 31,16.5" fill="none" stroke={colors.stroke} strokeWidth={1} strokeLinejoin="miter" />
+        <Path d="M 14,16.5 L 31,16.5" fill="none" stroke={colors.innerStroke} strokeWidth={0.8} strokeLinejoin="miter" />
         <Path d="M 11,14 L 34,14" fill="none" stroke={colors.stroke} strokeWidth={1} strokeLinejoin="miter" />
       </G>
     </Svg>
@@ -175,19 +320,42 @@ function BishopPiece({ color, size }: { color: PieceColor; size: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 45 45">
       <Defs>
-        <LinearGradient id={`bishopGrad${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
+        <LinearGradient id={`bishopGrad${color}`} x1="25%" y1="0%" x2="75%" y2="100%">
           <Stop offset="0%" stopColor={colors.fillLight} />
-          <Stop offset="50%" stopColor={colors.fill} />
-          <Stop offset="100%" stopColor={colors.fillDark} />
+          <Stop offset="40%" stopColor={colors.fill} />
+          <Stop offset="80%" stopColor={colors.fillDark} />
+          <Stop offset="100%" stopColor={colors.fillShadow} />
         </LinearGradient>
+        <RadialGradient id={`bishopSpec${color}`} cx="35%" cy="20%">
+          <Stop offset="0%" stopColor={colors.specular} stopOpacity="0.4" />
+          <Stop offset="70%" stopColor={colors.fill} stopOpacity="0" />
+        </RadialGradient>
       </Defs>
       <G transform="translate(0,0.5)">
+        {/* Shadow */}
+        <Ellipse cx="22.5" cy="40.5" rx="10" ry="2" fill={colors.shadow} opacity="0.3" />
+        
         <G fill={`url(#bishopGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+          {/* Base */}
           <Path d="M 9,36 C 12.39,35.03 19.11,36.43 22.5,34 C 25.89,36.43 32.61,35.03 36,36 C 36,36 37.65,36.54 39,38 C 38.32,38.97 37.35,38.99 36,38.5 C 32.61,37.53 25.89,38.96 22.5,37.5 C 19.11,38.96 12.39,37.53 9,38.5 C 7.65,38.99 6.68,38.97 6,38 C 7.35,36.54 9,36 9,36 z" />
+          
+          {/* Body */}
           <Path d="M 15,32 C 17.5,34.5 27.5,34.5 30,32 C 30.5,30.5 30,30 30,30 C 30,27.5 27.5,26 27.5,26 C 33,24.5 33.5,14.5 22.5,10.5 C 11.5,14.5 12,24.5 17.5,26 C 17.5,26 15,27.5 15,30 C 15,30 14.5,30.5 15,32 z" />
-          <Path d="M 25,8 A 2.5,2.5 0 1 1 20,8 A 2.5,2.5 0 1 1 25,8 z" />
+          
+          {/* Top sphere */}
+          <Circle cx="22.5" cy="8" r="2.75" fill={`url(#bishopGrad${color})`} stroke={colors.stroke} strokeWidth={colors.strokeWidth} />
+          <Circle cx="22.5" cy="8" r="1.7" fill={colors.specular} opacity="0.25" />
         </G>
-        <Path d="M 17.5,26 L 27.5,26 M 15,30 L 30,30 M 22.5,15.5 L 22.5,20.5 M 20,18 L 25,18" fill="none" stroke={colors.stroke} strokeWidth={1.5} strokeLinejoin="miter" />
+        
+        {/* Specular highlight on body */}
+        <Path
+          d="M 17,31 C 19,33 26,33 28,31 C 28.3,30 28,29.5 28,29.5 C 28,27.5 26,26.5 26,26.5 C 30,25.3 30.5,17 22.5,14 C 14.5,17 15,25.3 19,26.5 C 19,26.5 17,27.5 17,29.5 C 17,29.5 16.7,30 17,31 z"
+          fill={`url(#bishopSpec${color})`}
+          opacity="0.3"
+        />
+        
+        {/* Cross detail */}
+        <Path d="M 17.5,26 L 27.5,26 M 15,30 L 30,30 M 22.5,15.5 L 22.5,20.5 M 20,18 L 25,18" fill="none" stroke={colors.stroke} strokeWidth={1.6} strokeLinejoin="miter" />
       </G>
     </Svg>
   );
@@ -199,13 +367,18 @@ function KnightPiece({ color, size }: { color: PieceColor; size: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 45 45">
       <Defs>
-        <LinearGradient id={`knightGrad${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
+        <LinearGradient id={`knightGrad${color}`} x1="20%" y1="0%" x2="80%" y2="100%">
           <Stop offset="0%" stopColor={colors.fillLight} />
-          <Stop offset="50%" stopColor={colors.fill} />
-          <Stop offset="100%" stopColor={colors.fillDark} />
+          <Stop offset="35%" stopColor={colors.fill} />
+          <Stop offset="70%" stopColor={colors.fillMid} />
+          <Stop offset="100%" stopColor={colors.fillShadow} />
         </LinearGradient>
       </Defs>
       <G transform="translate(0,0.5)">
+        {/* Shadow */}
+        <Ellipse cx="25" cy="41" rx="11" ry="2.5" fill={colors.shadow} opacity="0.35" />
+        
+        {/* Main body */}
         <Path
           d="M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18"
           fill={`url(#knightGrad${color})`}
@@ -214,6 +387,8 @@ function KnightPiece({ color, size }: { color: PieceColor; size: number }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+        
+        {/* Head/neck detail */}
         <Path
           d="M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10"
           fill={`url(#knightGrad${color})`}
@@ -222,9 +397,29 @@ function KnightPiece({ color, size }: { color: PieceColor; size: number }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <Path d="M 9.5,25.5 A 0.5,0.5 0 1 1 8.5,25.5 A 0.5,0.5 0 1 1 9.5,25.5 z" fill={colors.stroke} stroke={colors.stroke} />
+        
+        {/* Eye */}
+        <Circle cx="9" cy="25.5" r="0.8" fill={colors.stroke} stroke={colors.stroke} />
+        
+        {/* Nostril */}
         <Path d="M 15,15.5 A 0.5,1.5 0 1 1 14,15.5 A 0.5,1.5 0 1 1 15,15.5 z" fill={colors.stroke} stroke={colors.stroke} transform="matrix(0.866,0.5,-0.5,0.866,9.693,-5.173)" />
-        <Path d="M 24.55,10.4 L 24.1,11.85 L 24.6,12 C 27.75,13 30.25,14.49 32.5,18.75 C 34.75,23.01 35.75,29.06 35.25,39 L 35.2,39.5 L 37.45,39.5 L 37.5,39 C 38,28.94 36.62,22.15 34.25,17.66 C 31.88,13.17 28.46,11.02 25.06,10.5 L 24.55,10.4 z" fill={colors.stroke} stroke="none" />
+        
+        {/* Depth shadow on body */}
+        <Path 
+          d="M 24.55,10.4 L 24.1,11.85 L 24.6,12 C 27.75,13 30.25,14.49 32.5,18.75 C 34.75,23.01 35.75,29.06 35.25,39 L 35.2,39.5 L 37.45,39.5 L 37.5,39 C 38,28.94 36.62,22.15 34.25,17.66 C 31.88,13.17 28.46,11.02 25.06,10.5 L 24.55,10.4 z" 
+          fill={colors.fillShadow} 
+          stroke="none" 
+        />
+        
+        {/* Highlight on mane */}
+        <Path
+          d="M 24,12 C 33,12.5 37,17.5 36.8,37 L 17,37 C 17,29.5 26,31 24.5,19"
+          fill="none"
+          stroke={colors.highlight}
+          strokeWidth={0.8}
+          opacity="0.2"
+          strokeLinecap="round"
+        />
       </G>
     </Svg>
   );
@@ -236,19 +431,46 @@ function PawnPiece({ color, size }: { color: PieceColor; size: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 45 45">
       <Defs>
-        <LinearGradient id={`pawnGrad${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
+        <LinearGradient id={`pawnGrad${color}`} x1="25%" y1="0%" x2="75%" y2="100%">
           <Stop offset="0%" stopColor={colors.fillLight} />
-          <Stop offset="50%" stopColor={colors.fill} />
-          <Stop offset="100%" stopColor={colors.fillDark} />
+          <Stop offset="40%" stopColor={colors.fill} />
+          <Stop offset="75%" stopColor={colors.fillDark} />
+          <Stop offset="100%" stopColor={colors.fillShadow} />
         </LinearGradient>
+        <RadialGradient id={`pawnSpec${color}`} cx="35%" cy="15%">
+          <Stop offset="0%" stopColor={colors.specular} stopOpacity="0.5" />
+          <Stop offset="70%" stopColor={colors.fill} stopOpacity="0" />
+        </RadialGradient>
       </Defs>
       <G transform="translate(0,0.5)">
+        {/* Shadow */}
+        <Ellipse cx="22.5" cy="41" rx="8" ry="2" fill={colors.shadow} opacity="0.3" />
+        
+        {/* Main body with 3D shading */}
         <Path
           d="M 22.5,9 C 20.29,9 18.5,10.79 18.5,13 C 18.5,13.89 18.79,14.71 19.28,15.38 C 17.33,16.5 16,18.59 16,21 C 16,23.03 16.94,24.84 18.41,26.03 C 15.41,27.09 11,31.58 11,39.5 L 34,39.5 C 34,31.58 29.59,27.09 26.59,26.03 C 28.06,24.84 29,23.03 29,21 C 29,18.59 27.67,16.5 25.72,15.38 C 26.21,14.71 26.5,13.89 26.5,13 C 26.5,10.79 24.71,9 22.5,9 z"
           fill={`url(#pawnGrad${color})`}
           stroke={colors.stroke}
           strokeWidth={colors.strokeWidth}
           strokeLinecap="round"
+        />
+        
+        {/* Specular highlight on head */}
+        <Circle 
+          cx="22.5" 
+          cy="13" 
+          r="3.5" 
+          fill={`url(#pawnSpec${color})`} 
+          opacity="0.4"
+        />
+        
+        {/* Inner highlight for 3D depth */}
+        <Path
+          d="M 22.5,11 C 21,11 19.8,12.2 19.8,13.7 C 19.8,14.3 20,14.9 20.3,15.3 C 19,16.2 18,17.8 18,19.7 C 18,21.3 18.7,22.7 19.8,23.6 C 17.5,24.4 14,28 14,34.5 L 31,34.5 C 31,28 27.5,24.4 25.2,23.6 C 26.3,22.7 27,21.3 27,19.7 C 27,17.8 26,16.2 24.7,15.3 C 25,14.9 25.2,14.3 25.2,13.7 C 25.2,12.2 24,11 22.5,11 z"
+          fill="none"
+          stroke={colors.highlight}
+          strokeWidth={0.6}
+          opacity="0.15"
         />
       </G>
     </Svg>
@@ -258,10 +480,11 @@ function PawnPiece({ color, size }: { color: PieceColor; size: number }) {
 export default function ChessPiece({ type, color, size, isSelected }: ChessPieceProps) {
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { scale: withSpring(isSelected ? 1.2 : 1, springConfig) },
-      { translateY: withSpring(isSelected ? -6 : 0, springConfig) },
+      { scale: withSpring(isSelected ? 1.25 : 1, springConfig) },
+      { translateY: withSpring(isSelected ? -8 : 0, springConfig) },
     ],
-    shadowOpacity: withSpring(isSelected ? 0.4 : 0.2, springConfig),
+    shadowOpacity: withSpring(isSelected ? 0.5 : 0.25, springConfig),
+    shadowRadius: withSpring(isSelected ? 8 : 5, springConfig),
   }));
 
   const renderPiece = () => {
@@ -294,10 +517,11 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
+    // Enhanced shadow for better depth and visibility
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 5 }, // Increased from 3
+    shadowOpacity: 0.4, // Increased from 0.25
+    shadowRadius: 8, // Increased from 5
+    elevation: 10, // Increased from 6 for Android
   },
 });

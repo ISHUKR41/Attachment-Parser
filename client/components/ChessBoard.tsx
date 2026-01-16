@@ -25,19 +25,40 @@ interface ChessBoardProps {
   flipped?: boolean;
 }
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BOARD_PADDING = 12;
-const BOARD_SIZE = Math.min(SCREEN_WIDTH - 40, 380);
+
+// Dynamic board sizing with min/max constraints for different devices
+const calculateBoardSize = () => {
+  const horizontalMargin = 40; // 20px padding on each side
+  const minBoardSize = 280; // Minimum for very small phones
+  const maxBoardSize = 480; // Maximum for tablets
+  
+  // Calculate based on screen width
+  let boardSize = SCREEN_WIDTH - horizontalMargin;
+  
+  // Also consider screen height to ensure board doesn't take too much vertical space
+  // Reserve space for other UI elements (approx 400px for headers, controls, etc.)
+  const maxHeightBasedSize = SCREEN_HEIGHT - 400;
+  boardSize = Math.min(boardSize, maxHeightBasedSize);
+  
+  // Apply min/max constraints
+  boardSize = Math.max(minBoardSize, Math.min(maxBoardSize, boardSize));
+  
+  return boardSize;
+};
+
+const BOARD_SIZE = calculateBoardSize();
 const SQUARE_SIZE = (BOARD_SIZE - BOARD_PADDING * 2) / 8;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const LIGHT_SQUARE_COLORS = ['#F0E4D4', '#E8D8C4'];
-const DARK_SQUARE_COLORS = ['#1B7A5C', '#166B50'];
-const SELECTED_COLORS = ['#FFD700', '#DAA520'];
-const LAST_MOVE_COLORS = ['rgba(27, 122, 92, 0.4)', 'rgba(27, 122, 92, 0.3)'];
-const CHECK_COLORS = ['#FF4444', '#CC0000'];
-const VALID_MOVE_COLOR = 'rgba(46, 204, 155, 0.7)';
+const LIGHT_SQUARE_COLORS = ['#F5EBD8', '#EAE0CD']; // Brighter, more visible
+const DARK_SQUARE_COLORS = ['#1A7256', '#166B50']; // Higher contrast
+const SELECTED_COLORS = ['#FFD700', '#EAB308']; // More vibrant gold
+const LAST_MOVE_COLORS = ['rgba(27, 122, 92, 0.5)', 'rgba(27, 122, 92, 0.4)']; // More visible
+const CHECK_COLORS = ['#FF4444', '#DD0000']; // Stronger alert
+const VALID_MOVE_COLOR = 'rgba(46, 204, 155, 0.85)'; // Much more visible
 
 function Square({
   row,
@@ -67,14 +88,14 @@ function Square({
     onPress();
   };
 
-  const getSquareColors = () => {
+  const getSquareColors = (): string[] => {
     if (isCheck) return CHECK_COLORS;
     if (isSelected) return SELECTED_COLORS;
     if (isLastMove) return isLight ? ['#A8D5BA', '#98C8AB'] : ['#2A8A6A', '#1F7A5A'];
     return isLight ? LIGHT_SQUARE_COLORS : DARK_SQUARE_COLORS;
   };
 
-  const squareColors = getSquareColors();
+  const squareColors: string[] = getSquareColors();
 
   return (
     <AnimatedPressable
@@ -83,7 +104,7 @@ function Square({
       style={[styles.square, { width: SQUARE_SIZE, height: SQUARE_SIZE }]}
     >
       <LinearGradient
-        colors={squareColors}
+        colors={squareColors as any}
         style={StyleSheet.absoluteFill}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -97,10 +118,10 @@ function Square({
             {
               backgroundColor: piece ? 'transparent' : VALID_MOVE_COLOR,
               borderColor: piece ? VALID_MOVE_COLOR : 'transparent',
-              borderWidth: piece ? 4 : 0,
-              width: piece ? SQUARE_SIZE - 4 : SQUARE_SIZE * 0.38,
-              height: piece ? SQUARE_SIZE - 4 : SQUARE_SIZE * 0.38,
-              borderRadius: piece ? BorderRadius.xs : SQUARE_SIZE * 0.19,
+              borderWidth: piece ? 5 : 0, // Increased from 4 for visibility
+              width: piece ? SQUARE_SIZE - 6 : SQUARE_SIZE * 0.42, // Larger indicator
+              height: piece ? SQUARE_SIZE - 6 : SQUARE_SIZE * 0.42,
+              borderRadius: piece ? BorderRadius.xs : SQUARE_SIZE * 0.21,
             },
           ]}
         />
@@ -275,8 +296,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   labelText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.7)',
+    fontSize: Math.max(12, Math.min(14, SQUARE_SIZE * 0.26)), // Increased from 0.22, larger labels
+    fontWeight: '800', // Bolder from 700
+    color: 'rgba(255,255,255,0.95)', // More visible from 0.85
+    textShadowColor: 'rgba(0,0,0,0.5)', // Stronger shadow from 0.3
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3, // Increased from 2
   },
 });
