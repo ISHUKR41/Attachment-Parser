@@ -1,31 +1,61 @@
 import { Platform } from "react-native";
 
-const tintColorLight = "#007AFF";
-const tintColorDark = "#0A84FF";
+const tintColorLight = "#1B7A5C";
+const tintColorDark = "#2ECC9B";
 
 export const Colors = {
   light: {
-    text: "#11181C",
+    text: "#1A1F1E",
     buttonText: "#FFFFFF",
     tabIconDefault: "#687076",
     tabIconSelected: tintColorLight,
-    link: "#007AFF",
-    backgroundRoot: "#FFFFFF", // Elevation 0
-    backgroundDefault: "#F2F2F2", // Elevation 1
-    backgroundSecondary: "#E6E6E6", // Elevation 2
-    backgroundTertiary: "#D9D9D9", // Elevation 3
+    link: "#1B7A5C",
+    backgroundRoot: "#F5F8F7",
+    backgroundDefault: "#E8EFED",
+    backgroundSecondary: "#DCE6E3",
+    backgroundTertiary: "#CFD9D6",
+    accent: "#D4AF37",
+    boardLight: "#F0E6D3",
+    boardDark: "#1B7A5C",
+    pieceWhite: "#FEFEFE",
+    pieceBlack: "#1A1A1A",
+    highlight: "rgba(212, 175, 55, 0.5)",
+    check: "rgba(220, 53, 69, 0.6)",
+    lastMove: "rgba(27, 122, 92, 0.3)",
+    validMove: "rgba(46, 204, 155, 0.4)",
+    cardGradientStart: "#FFFFFF",
+    cardGradientEnd: "#F0F5F3",
   },
   dark: {
     text: "#ECEDEE",
     buttonText: "#FFFFFF",
     tabIconDefault: "#9BA1A6",
     tabIconSelected: tintColorDark,
-    link: "#0A84FF",
-    backgroundRoot: "#1F2123", // Elevation 0
-    backgroundDefault: "#2A2C2E", // Elevation 1
-    backgroundSecondary: "#353739", // Elevation 2
-    backgroundTertiary: "#404244", // Elevation 3
+    link: "#2ECC9B",
+    backgroundRoot: "#0A1612",
+    backgroundDefault: "#122A22",
+    backgroundSecondary: "#1A3D32",
+    backgroundTertiary: "#225043",
+    accent: "#D4AF37",
+    boardLight: "#C9B896",
+    boardDark: "#1B5A45",
+    pieceWhite: "#F5F5F5",
+    pieceBlack: "#2A2A2A",
+    highlight: "rgba(212, 175, 55, 0.6)",
+    check: "rgba(220, 53, 69, 0.7)",
+    lastMove: "rgba(46, 204, 155, 0.25)",
+    validMove: "rgba(46, 204, 155, 0.5)",
+    cardGradientStart: "#1A3D32",
+    cardGradientEnd: "#122A22",
   },
+};
+
+export const ChessColors = {
+  gold: "#D4AF37",
+  emerald: "#1B7A5C",
+  darkEmerald: "#0D3B2E",
+  cream: "#F0E6D3",
+  ivory: "#FFFEF2",
 };
 
 export const Spacing = {
@@ -93,13 +123,9 @@ export const Typography = {
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: "system-ui",
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: "ui-serif",
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: "ui-rounded",
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: "ui-monospace",
   },
   default: {
