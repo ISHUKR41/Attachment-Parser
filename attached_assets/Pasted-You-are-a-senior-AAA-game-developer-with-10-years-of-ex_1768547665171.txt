@@ -1,0 +1,198 @@
+You are a senior AAA game developer with 10+ years of experience in:
+- Mobile game development
+- 3D game engines
+- Chess game logic
+- Performance optimization
+- UI/UX for mobile games
+
+You have previously built production-level 3D board games.
+🧠 PROJECT OVERVIEW
+css
+Copy code
+I want to build a FULLY FUNCTIONAL 3D CHESS GAME for MOBILE (Android first, iOS optional).
+
+This is NOT a demo or prototype.
+This must be a COMPLETE, BUG-FREE, SMOOTH, PROFESSIONAL game.
+
+Game should follow OFFICIAL INTERNATIONAL CHESS RULES.
+🎮 GAME REQUIREMENTS (MUST FOLLOW ALL)
+1️⃣ PLATFORM
+diff
+Copy code
+- Primary: Android
+- Secondary: iOS (if possible)
+- Touch-based controls
+- Optimized for low & mid-range devices
+2️⃣ GAME ENGINE
+diff
+Copy code
+Use Unity (latest LTS version)
+
+- Language: C#
+- Rendering: URP or Standard (performance-focused)
+- 60 FPS target
+3️⃣ 3D VISUALS
+markdown
+Copy code
+- Fully 3D chess board
+- Fully 3D chess pieces (Pawn, Rook, Knight, Bishop, Queen, King)
+- Realistic lighting (not heavy)
+- Smooth animations:
+  - Piece selection
+  - Piece movement
+  - Capture animation
+  - Check & Checkmate highlight
+4️⃣ CHESS LOGIC (EXTREMELY IMPORTANT)
+markdown
+Copy code
+Implement COMPLETE and CORRECT chess logic including:
+
+- Legal moves validation
+- Check detection
+- Checkmate detection
+- Stalemate
+- Castling (both sides)
+- En passant
+- Pawn promotion (UI popup to choose piece)
+- Draw conditions:
+  - Threefold repetition
+  - 50-move rule
+  - Insufficient material
+
+No illegal move should be allowed.
+King should NEVER move into check.
+5️⃣ GAME MODES
+diff
+Copy code
+- Player vs Player (Offline – same device)
+- Player vs AI
+
+AI Requirements:
+- Multiple difficulty levels (Easy, Medium, Hard)
+- Use Minimax with Alpha-Beta pruning
+- AI must think logically (not random)
+6️⃣ CAMERA & CONTROLS
+diff
+Copy code
+- Smooth orbit camera
+- Zoom in / zoom out
+- Rotate board
+- Auto camera switch based on player turn (optional)
+
+Controls:
+- Tap to select piece
+- Highlight legal moves
+- Tap destination to move
+7️⃣ UI / UX
+markdown
+Copy code
+- Clean modern mobile UI
+- Main Menu:
+  - Play vs AI
+  - Play vs Player
+  - Settings
+  - Exit
+
+- In-game UI:
+  - Restart
+  - Undo move (optional)
+  - Move history
+  - Highlight last move
+8️⃣ SOUND & FEEDBACK
+diff
+Copy code
+- Move sound
+- Capture sound
+- Check sound
+- Win/Lose sound
+- Optional background music (toggleable)
+9️⃣ PERFORMANCE OPTIMIZATION
+diff
+Copy code
+- Mobile optimized meshes
+- Low draw calls
+- Efficient scripts
+- Object pooling if needed
+- No frame drops
+🔧 CODE REQUIREMENTS
+markdown
+Copy code
+- Clean, readable, well-commented C# code
+- Separate scripts for:
+  - Board Manager
+  - Piece Logic
+  - Game Manager
+  - AI Logic
+  - UI Manager
+- No hardcoded logic
+- Scalable & maintainable architecture
+📁 PROJECT STRUCTURE
+Copy code
+Assets/
+ ├── Scripts/
+ │    ├── ChessLogic/
+ │    ├── AI/
+ │    ├── UI/
+ │    └── Managers/
+ ├── Models/
+ ├── Materials/
+ ├── Animations/
+ ├── Sounds/
+ └── Scenes/
+📘 DOCUMENTATION (VERY IMPORTANT)
+vbnet
+Copy code
+Provide:
+- Full step-by-step explanation
+- How chess logic works
+- How AI decision-making works
+- How to build APK
+- How to extend game (online multiplayer, themes)
+❌ STRICT RULES
+diff
+Copy code
+- No pseudo-code
+- No half implementation
+- No missing logic
+- Everything must be runnable
+- Code must compile without errors
+✅ FINAL OUTPUT EXPECTED
+markdown
+Copy code
+1. Complete Unity project setup guide
+2. Fully working C# scripts
+3. Chess logic explanation
+4. AI logic explanation
+5. Mobile optimization tips
+6. Future upgrade suggestions
+🧰 EXTRA FEATURES (OPTIONAL BUT BONUS)
+diff
+Copy code
+- Board themes
+- Piece skins
+- Save game
+- Resume game
+- Match timer
+📌 HARDWARE / SOFTWARE REQUIREMENTS (FOR YOU)
+💻 SYSTEM
+diff
+Copy code
+- Windows 10 / 11
+- Minimum 8GB RAM (16GB recommended)
+- SSD recommended
+🧠 SOFTWARE
+diff
+Copy code
+- Unity Hub
+- Unity LTS version
+- Android Studio (SDK + NDK)
+- Basic C# knowledge
+
+
+
+
+
+and haar ek screen ke liye hona chiaye and sare screen mai fully working condton mia chiaye brohther 
+
+
+and mujhe iska website bhe chiaye and mobile version bhe chiaye okay and bhout hee 3d gaming chiaye mujhe and animted bhe chiaye bro website ke liye and user jo hai offline and online gaming bhe kar sakte hai and game point bhe milgeaa point wala game rahega and sab cheez fully logic and mind ke sath karna and wesbite ke liye ek alag folder bana lena bro pls and sab cheez fully logic and mind ke sath karna pls kuch and sab cheez soch samaj kar karna yaar pls 
